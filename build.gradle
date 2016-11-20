@@ -1,0 +1,101 @@
+plugins {
+    id 'application'
+    id 'java'
+    id 'maven-publish'
+    id 'net.nemerosa.versioning' version '1.5.0'
+    id 'com.jfrog.bintray' version '1.6'
+}
+
+sourceCompatibility = '1.8'
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+//apply from: 'http://gradle-plugins.mihosoft.eu/latest/vlicenseheader.gradle'
+//repairHeaders.licenseHeaderText = new File(projectDir,'./license-template.txt')
+
+task wrapper(type: Wrapper, description: 'Creates and deploys the Gradle wrapper to the current directory.') {
+    gradleVersion = '2.11'
+}
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+// javadoc is way too strict for my taste.
+if (JavaVersion.current().isJava8Compatible()) {
+    allprojects {
+        tasks.withType(Javadoc) {
+            options.addStringOption('Xdoclint:none', '-quiet')
+        }
+    }
+}
+
+def pomConfig = {
+    name 'vrl'
+    description 'extsymja'
+    url 'https://bitbucket.org/miho20/symja_android_library'
+    inceptionYear '2016'
+    licenses {
+        license([:]) {
+            name 'LGPL-3.0'
+            url 'https://www.gnu.org/licenses/lgpl-3.0.de.html'
+            distribution 'repo'
+        }
+    }
+    scm {
+        url 'https://bitbucket.org/miho20/symja_android_library'
+        connection 'https://bitbucket.org/miho20/symja_android_library'
+        developerConnection 'https://bitbucket.org/miho20/symja_android_library'
+    }
+    developers {
+        developer {
+            id 'miho'
+            name 'Michael Hoffer'
+        }
+    }
+}
+
+publishing {
+    publications {
+        mavenCustom(MavenPublication) {
+            artifactId 'extsymja'
+            groupId group
+            artifact ('releases/symja.jar') {
+            
+            }
+            // artifact ('releases/v'+version+'/VRL-src.jar') {
+            //   classifier 'sources'
+            // }
+            // artifact ('releases/v'+version+'/VRL-API-doc.jar') {
+            //    classifier 'javadoc'
+            // }
+          
+            pom.withXml {
+                def root = asNode()
+                root.appendNode 'description', 'extsymja'
+                root.children().last() + pomConfig
+            }
+        }
+    }
+}
+
+if (!project.hasProperty('bintrayUsername')) ext.bintrayUsername = ''
+if (!project.hasProperty('bintrayApiKey')) ext.bintrayApiKey = ''
+
+bintray {
+    user = project.bintrayUsername
+    key = project.bintrayApiKey
+    publications = ['mavenCustom']
+    pkg {
+        repo                  = 'Ext'
+        userOrg               = 'miho'
+        name                  = project.name
+        desc                  = 'extsymja'
+        licenses              = ['LGPL-3.0']
+        labels                = ['CAS', 'Math', 'Visual Programming', 'Java',  'CAS',  'JavaFX', 'VRL',  '3D',  'Groovy',  'VRL-Studio', 'IDE']
+        websiteUrl            = 'https://bitbucket.org/miho20/symja_android_library'
+        issueTrackerUrl       = 'https://bitbucket.org/miho20/symja_android_library'
+        vcsUrl                = 'https://bitbucket.org/miho20/symja_android_library'
+        publicDownloadNumbers = true
+    }
+}
